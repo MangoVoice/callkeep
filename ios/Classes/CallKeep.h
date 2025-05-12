@@ -36,6 +36,13 @@ static NSString *_Nonnull const CallKeepActionEnd = @"CallKeepActionEnd";
 @property (nonatomic, strong, nullable) CXProvider *callKeepProvider;
 @property (nonatomic, strong, nullable) FlutterMethodChannel* eventChannel;
 
+// Push notification payload keys - can be set directly
+@property (class, nonatomic, strong) NSString *PushNotificationUuidKey;
+@property (class, nonatomic, strong) NSString *PushNotificationCallerIdKey;
+@property (class, nonatomic, strong) NSString *PushNotificationCallerNameKey;
+@property (class, nonatomic, strong) NSString *PushNotificationHasVideoKey;
+@property (class, nonatomic, strong) NSString *PushNotificationCallerIdTypeKey;
+
 - (BOOL)handleMethodCall:(FlutterMethodCall* _Nonnull)call result:(FlutterResult _Nonnull )result;
 
 + (BOOL)application:(UIApplication * _Nonnull)application

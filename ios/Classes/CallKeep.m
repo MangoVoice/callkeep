@@ -31,6 +31,29 @@ static CXProvider* sharedProvider;
 static NSDictionary *settings;
 static NSObject<CallKeepPushDelegate>* _delegate;
 
+// Static variables for push notification keys
+static NSString *_PushNotificationUuidKey = @"uuid";
+static NSString *_PushNotificationCallerIdKey = @"caller_id";
+static NSString *_PushNotificationCallerNameKey = @"caller_name";
+static NSString *_PushNotificationHasVideoKey = @"has_video";
+static NSString *_PushNotificationCallerIdTypeKey = @"caller_id_type";
+
+// Class property getters/setters
++ (NSString *)PushNotificationUuidKey { return _PushNotificationUuidKey; }
++ (void)setPushNotificationUuidKey:(NSString *)value { _PushNotificationUuidKey = value; }
+
++ (NSString *)PushNotificationCallerIdKey { return _PushNotificationCallerIdKey; }
++ (void)setPushNotificationCallerIdKey:(NSString *)value { _PushNotificationCallerIdKey = value; }
+
++ (NSString *)PushNotificationCallerNameKey { return _PushNotificationCallerNameKey; }
++ (void)setPushNotificationCallerNameKey:(NSString *)value { _PushNotificationCallerNameKey = value; }
+
++ (NSString *)PushNotificationHasVideoKey { return _PushNotificationHasVideoKey; }
++ (void)setPushNotificationHasVideoKey:(NSString *)value { _PushNotificationHasVideoKey = value; }
+
++ (NSString *)PushNotificationCallerIdTypeKey { return _PushNotificationCallerIdTypeKey; }
++ (void)setPushNotificationCallerIdTypeKey:(NSString *)value { _PushNotificationCallerIdTypeKey = value; }
+
 - (instancetype)init
 {
 #ifdef DEBUG
@@ -244,12 +267,11 @@ static NSObject<CallKeepPushDelegate>* _delegate;
         return;
     }
     
-    NSString *uuid = dic[@"uuid"];
-    NSString *callerId = dic[@"caller_id"];
-    NSString *callerName = dic[@"caller_name"];
-    BOOL hasVideo = [dic[@"has_video"] boolValue];
-    NSString *callerIdType = dic[@"caller_id_type"];
-    
+    NSString *uuid = dic[CallKeep.PushNotificationUuidKey];
+    NSString *callerId = dic[CallKeep.PushNotificationCallerIdKey];
+    NSString *callerName = dic[CallKeep.PushNotificationCallerNameKey];
+    BOOL hasVideo = [dic[CallKeep.PushNotificationHasVideoKey] boolValue];
+    NSString *callerIdType = dic[CallKeep.PushNotificationCallerIdTypeKey];
     
     if( uuid == nil) {
         uuid = [self createUUID];
