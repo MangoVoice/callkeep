@@ -261,10 +261,7 @@ static NSString *_PushNotificationCallerIdTypeKey = @"caller_id_type";
     
     if (!dic || dic[@"aps"] != nil) {
         NSLog(@"Do not use the 'alert' format for push type %@.", payload.type);
-        if(completion != nil) {
-            completion();
-        }
-        return;
+        // The main repo ends here for some dumb reason. It doesn't hurt to have an aps property here...
     }
     
     NSString *uuid = dic[CallKeep.PushNotificationUuidKey];
