@@ -276,16 +276,16 @@ public class VoiceConnectionService extends ConnectionService {
     }
 
     private void startForegroundService() {
+        Log.d(TAG, "[VoiceConnectionService] startForegroundService");
+        Context context = this.getApplicationContext();
+        ConstraintsMap foregroundSettings = getForegroundSettings(context);
+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             // Foreground services not required before SDK 28
             startMainActivity(foregroundSettings);
             Log.d(TAG, "[VoiceConnectionService] Not starting foreground notification for pre-Oreo device, but MainActivity (if configured) should have been started.");
             return;
         }
-
-        Log.d(TAG, "[VoiceConnectionService] startForegroundService");
-        Context context = this.getApplicationContext();
-        ConstraintsMap foregroundSettings = getForegroundSettings(context);
 
         // Check if essential notification settings are present
         if (!foregroundSettings.hasKey("channelId") || !foregroundSettings.hasKey("channelName") || !foregroundSettings.hasKey("notificationTitle")) {
