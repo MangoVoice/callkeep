@@ -7,6 +7,7 @@ import 'package:logger/logger.dart';
 
 import 'actions.dart';
 import 'event.dart';
+import 'options.dart';
 
 bool get isIOS => Platform.isIOS;
 bool get supportConnectionService =>
@@ -29,18 +30,18 @@ class FlutterCallkeep extends EventManager {
 
   Future<void> setup({
     Future<bool> Function()? showAlertDialog,
-    required Map<String, dynamic> options,
+    required CallKeepOptions options,
     bool backgroundMode = false,
   }) async {
     _showAlertDialog = showAlertDialog;
     if (!isIOS) {
       await _setupAndroid(
-        options: options['android'],
+        options: options.android,
         backgroundMode: backgroundMode,
       );
       return;
     }
-    await _setupIOS(options: options['ios']);
+    await _setupIOS(options: options.ios);
   }
 
   Future<void> registerPhoneAccount() async {
@@ -59,10 +60,10 @@ class FlutterCallkeep extends EventManager {
   }
 
   Future<bool> hasDefaultPhoneAccount(
-    Map<String, dynamic> options,
+    AndroidOptions options,
   ) async {
     if (!isIOS) {
-      return await _hasDefaultPhoneAccount(options);
+      return await _hasDefaultPhoneAccount(options.toMap());
     }
 
     // return true on iOS because we don't want to block the endUser
@@ -336,31 +337,27 @@ class FlutterCallkeep extends EventManager {
     return false;
   }
 
-  Future<void> _setupIOS({required Map<String, dynamic> options}) async {
-    if (options['appName'] == null) {
+  Future<void> _setupIOS({required IOSOptions options}) async {
+    if (options.appName == null || options.appName!.isEmpty) {
       throw Exception('CallKeep.setup: option "appName" is required');
     }
-    if (options['appName'] is String == false) {
-      throw Exception(
-          'CallKeep.setup: option "appName" should be of type "string"');
-    }
     return await _channel
-        .invokeMethod<void>('setup', <String, dynamic>{'options': options});
+        .invokeMethod<void>('setup', <String, dynamic>{'options': options.toMap()});
   }
 
   Future<bool> _setupAndroid({
-    required Map<String, dynamic> options,
+    required AndroidOptions options,
     required bool backgroundMode,
   }) async {
-    await _channel.invokeMethod<void>('setup', {'options': options});
+    await _channel.invokeMethod<void>('setup', {'options': options.toMap()});
 
     if (backgroundMode) {
       return true;
     }
 
-    final additionalPermissions = options['additionalPermissions'] as List?;
+    final additionalPermissions = options.additionalPermissions;
     final hasPermissions = await requestPermissions(
-      additionalPermissions?.cast<String>(),
+      additionalPermissions,
     );
     if (!hasPermissions) return false;
 
@@ -412,13 +409,13 @@ class FlutterCallkeep extends EventManager {
   }
 
   Future<void> setForegroundServiceSettings({
-    required Map<String, String> settings,
+    required ForegroundServiceOptions settings,
   }) async {
     if (isIOS) {
       return;
     }
     await _channel.invokeMethod<void>('foregroundService', <String, dynamic>{
-      'settings': {'foregroundService': settings}
+      'settings': {'foregroundService': settings.toMap()}
     });
   }
 
