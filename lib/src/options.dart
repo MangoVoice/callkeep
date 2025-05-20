@@ -187,19 +187,3 @@ class ForegroundServiceOptions {
     return map;
   }
 }
-
-Future<void> setup({
-  Future<bool> Function()? showAlertDialog,
-  required CallKeepOptions options,
-  bool backgroundMode = false,
-}) async {
-  _showAlertDialog = showAlertDialog;
-  if (!isIOS) {
-    await _setupAndroid(
-      options: options.android,
-      backgroundMode: backgroundMode,
-    );
-    return;
-  }
-  await _setupIOS(options: options.ios);
-}
