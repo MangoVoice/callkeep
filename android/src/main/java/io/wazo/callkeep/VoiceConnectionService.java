@@ -278,14 +278,23 @@ public class VoiceConnectionService extends ConnectionService {
     private void startForegroundService() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             // Foreground services not required before SDK 28
+            startMainActivity(foregroundSettings);
+            Log.d(TAG, "[VoiceConnectionService] Not starting foreground notification for pre-Oreo device, but MainActivity (if configured) should have been started.");
             return;
         }
+
         Log.d(TAG, "[VoiceConnectionService] startForegroundService");
-        ConstraintsMap foregroundSettings = getForegroundSettings(getApplicationContext());
-        if (foregroundSettings == null) {
-            Log.w(TAG, "[VoiceConnectionService] Not creating foregroundService because not configured");
+        Context context = this.getApplicationContext();
+        ConstraintsMap foregroundSettings = getForegroundSettings(context);
+
+        // Check if essential notification settings are present
+        if (!foregroundSettings.hasKey("channelId") || !foregroundSettings.hasKey("channelName") || !foregroundSettings.hasKey("notificationTitle")) {
+            Log.w(TAG, "[VoiceConnectionService] Not creating foreground notification because essential settings (channelId, channelName, notificationTitle) are missing.");
             return;
         }
+        
+        Log.d(TAG, "[VoiceConnectionService] Creating foreground notification.");
+
         String NOTIFICATION_CHANNEL_ID = foregroundSettings.getString("channelId");
         String channelName = foregroundSettings.getString("channelName");
         NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_NONE);
@@ -301,7 +310,6 @@ public class VoiceConnectionService extends ConnectionService {
                 .setCategory(Notification.CATEGORY_SERVICE);
 
         if (foregroundSettings.hasKey("notificationIcon")) {
-            Context context = this.getApplicationContext();
             Resources res = context.getResources();
             String smallIcon = foregroundSettings.getString("notificationIcon");
             String mipmap = "mipmap/";
@@ -325,6 +333,42 @@ public class VoiceConnectionService extends ConnectionService {
             notificationId = foregroundSettings.getInt("notificationId");
         }
         startForeground(notificationId, notification);
+
+        startMainActivity(foregroundSettings);
+    }
+
+    private void startMainActivity(ConstraintsMap foregroundSettings) {
+        if (foregroundSettings == null) {
+            Log.w(TAG, "[VoiceConnectionService] foregroundSettings is null. Cannot start MainActivity.");
+            return;
+        }
+
+        String packageName = foregroundSettings.getString("packageName");
+        if (packageName == null || packageName.isEmpty()) {
+            Log.w(TAG, "[VoiceConnectionService] 'packageName' not provided in foregroundSettings. Cannot start MainActivity.");
+            return;
+        }
+
+        try {
+            Intent intent = new Intent();
+            intent.setClassName(packageName, packageName + ".MainActivity");
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+            boolean singleInstance = foregroundSettings.hasKey("singleInstance") ? foregroundSettings.getBoolean("singleInstance") : true; // Default to true
+            boolean noAnimation = foregroundSettings.hasKey("noAnimation") ? foregroundSettings.getBoolean("noAnimation") : true; // Default to true
+
+            if (singleInstance) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            }
+            if (noAnimation) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+            }
+
+            this.getApplicationContext().startActivity(intent);
+            Log.d(TAG, "[VoiceConnectionService] MainActivity started with package: " + packageName);
+        } catch (Exception e) {
+            Log.e(TAG, "[VoiceConnectionService] Error starting MainActivity: " + e.getMessage());
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
