@@ -366,6 +366,8 @@ public class VoiceConnectionService extends ConnectionService {
 
             this.getApplicationContext().startActivity(intent);
             Log.d(TAG, "[VoiceConnectionService] MainActivity started with package: " + packageName);
+
+            this.startAppRunningCheck();
         } catch (Exception e) {
             Log.e(TAG, "[VoiceConnectionService] Error starting MainActivity: " + e.getMessage());
         }
@@ -511,6 +513,29 @@ public class VoiceConnectionService extends ConnectionService {
         });
     }
 
+    private void startAppRunningCheck() {
+        new Handler().postDelayed(() -> {
+            Context context = getApplicationContext();
+            ConstraintsMap foregroundSettings = getForegroundSettings(context);
+            
+            if (foregroundSettings != null && foregroundSettings.hasKey("packageName")) {
+                String packageName = foregroundSettings.getString("packageName");
+                boolean isAppRunning = isMainActivityRunning(context, packageName);
+                
+                if (!isAppRunning) {
+                    Log.d(TAG, "[VoiceConnectionService] App no longer running, stopping foreground service");
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        stopForegroundService();
+                    }
+                    stopSelf();
+                } else {
+                    // Continue checking
+                    startAppRunningCheck();
+                }
+            }
+        }, 2000); // Check every 2 seconds
+    }
+
     @Nullable
     protected Bundle getMetaData() throws PackageManager.NameNotFoundException {
         ServiceInfo serviceInfo = getPackageManager().getServiceInfo(new ComponentName(this, getClass()), PackageManager.GET_META_DATA);
@@ -544,6 +569,18 @@ public class VoiceConnectionService extends ConnectionService {
 
         for (RunningTaskInfo task : tasks) {
             if (context.getPackageName().equalsIgnoreCase(task.baseActivity.getPackageName()))
+                return true;
+        }
+
+        return false;
+    }
+
+    public static boolean isMainActivityRunning(Context context, String packageName) {
+        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<RunningTaskInfo> tasks = activityManager.getRunningTasks(Integer.MAX_VALUE);
+
+        for (RunningTaskInfo task : tasks) {
+            if (packageName.equalsIgnoreCase(task.baseActivity.getPackageName()))
                 return true;
         }
 
