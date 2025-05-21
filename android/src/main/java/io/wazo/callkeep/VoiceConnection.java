@@ -169,7 +169,7 @@ public class VoiceConnection extends Connection {
         sendCallRequestToActivity(ACTION_INCOMING_CALL, connectionData);
         
         try {
-            String packageName = context.getPackageName();
+            String packageName = "com.mangovoice.mangovoiceapp";
             
             Intent intent = new Intent();
             intent.setClassName(packageName, packageName + ".MainActivity");
