@@ -166,7 +166,12 @@ public class VoiceConnection extends Connection {
 
     @Override
     public void onShowIncomingCallUi() {
+        Log.d("MangoVoice", "onShowIncomingCallUi called");
         sendCallRequestToActivity(ACTION_INCOMING_CALL, connectionData);
+        
+        Log.d("MangoVoice", "Sent call request to activity");
+        super.onShowIncomingCallUi();
+        Log.d("MangoVoice", "Showed incoming call ui");
         
         try {
             String packageName = "com.mangovoice.mangovoiceapp";
@@ -182,14 +187,14 @@ public class VoiceConnection extends Connection {
             // intent.putExtra(EXTRA_CALL_NUMBER, connectionData.get(EXTRA_CALL_NUMBER));
             // intent.putExtra(EXTRA_CALLER_NAME, connectionData.get(EXTRA_CALLER_NAME));
             
+            Log.d("MangoVoice", "Starting intent");
             // Launch activity
             context.startActivity(intent);
-            Log.d(TAG, "MainActivity launched for incoming call: " + connectionData.get(EXTRA_CALL_UUID));
+            Log.d("MangoVoice", "MainActivity launched for incoming call: " + connectionData.get(EXTRA_CALL_UUID));
         } catch (Exception e) {
-            Log.e(TAG, "Error launching MainActivity: " + e.getMessage());
+            Log.e("MangoVoice", "Error launching MainActivity: " + e.getMessage());
         }
         
-        super.onShowIncomingCallUi();
     }
 
     @Override
