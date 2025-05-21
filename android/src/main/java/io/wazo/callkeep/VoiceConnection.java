@@ -167,6 +167,29 @@ public class VoiceConnection extends Connection {
     @Override
     public void onShowIncomingCallUi() {
         sendCallRequestToActivity(ACTION_INCOMING_CALL, connectionData);
+        // Launch MainActivity directly
+        Context context = getContext();
+        String packageName = context.getPackageName();
+        
+        try {
+            Intent intent = new Intent();
+            intent.setClassName(packageName, packageName + ".MainActivity");
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+            
+            // Add call data to the intent
+            intent.putExtra(EXTRA_CALL_UUID, connectionData.get(EXTRA_CALL_UUID));
+            intent.putExtra(EXTRA_CALL_NUMBER, connectionData.get(EXTRA_CALL_NUMBER));
+            intent.putExtra(EXTRA_CALLER_NAME, connectionData.get(EXTRA_CALLER_NAME));
+            
+            // Launch activity
+            context.startActivity(intent);
+            Log.d(TAG, "MainActivity launched for incoming call: " + connectionData.get(EXTRA_CALL_UUID));
+        } catch (Exception e) {
+            Log.e(TAG, "Error launching MainActivity: " + e.getMessage());
+        }
+        
         super.onShowIncomingCallUi();
     }
 

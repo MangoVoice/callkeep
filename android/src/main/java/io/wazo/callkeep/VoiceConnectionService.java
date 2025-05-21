@@ -345,13 +345,6 @@ public class VoiceConnectionService extends ConnectionService {
         //startMainActivity(foregroundSettings);
     }
 
-    @Override
-    public void onShowIncomingCallUi() {
-        super.onShowIncomingCallUi();
-        Log.d(TAG, "[VoiceConnectionService] onShowIncomingCallUi");
-        startMainActivity(getForegroundSettings(getApplicationContext()));
-    }
-
     private void startMainActivity(ConstraintsMap foregroundSettings) {
         if (foregroundSettings == null) {
             Log.w(TAG, "[VoiceConnectionService] foregroundSettings is null. Cannot start MainActivity.");
