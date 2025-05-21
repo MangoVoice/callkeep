@@ -165,36 +165,36 @@ public class VoiceConnection extends Connection {
     }
 
     @Override
-    public void onShowIncomingCallUi() {
-        Log.d("MangoVoice", "onShowIncomingCallUi called");
-        sendCallRequestToActivity(ACTION_INCOMING_CALL, connectionData);
+    public void onStateChanged(int state) {
+        Log.d("MangoVoice", "onStateChanged called");
         
-        Log.d("MangoVoice", "Sent call request to activity");
-        super.onShowIncomingCallUi();
-        Log.d("MangoVoice", "Showed incoming call ui");
-        
-        try {
-            String packageName = "com.mangovoice.mangovoiceapp";
-            
-            Intent intent = new Intent();
-            intent.setClassName(packageName, packageName + ".MainActivity");
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-            
-            // // Add call data to the intent
-            // intent.putExtra(EXTRA_CALL_UUID, connectionData.get(EXTRA_CALL_UUID));
-            // intent.putExtra(EXTRA_CALL_NUMBER, connectionData.get(EXTRA_CALL_NUMBER));
-            // intent.putExtra(EXTRA_CALLER_NAME, connectionData.get(EXTRA_CALLER_NAME));
-            
-            Log.d("MangoVoice", "Starting intent");
-            // Launch activity
-            context.startActivity(intent);
-            Log.d("MangoVoice", "MainActivity launched for incoming call: " + connectionData.get(EXTRA_CALL_UUID));
-        } catch (Exception e) {
-            Log.e("MangoVoice", "Error launching MainActivity: " + e.getMessage());
+        super.onStateChanged(state);
+        Log.d("MangoVoice", "super.onStateChanged(state) called");
+
+        if (state == Connection.STATE_RINGING) {
+            Log.d("MangoVoice", "STATE_RINGING");
+            try {
+                String packageName = "com.mangovoice.mangovoiceapp";
+                
+                Intent intent = new Intent();
+                intent.setClassName(packageName, packageName + ".MainActivity");
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+                
+                // // Add call data to the intent
+                // intent.putExtra(EXTRA_CALL_UUID, connectionData.get(EXTRA_CALL_UUID));
+                // intent.putExtra(EXTRA_CALL_NUMBER, connectionData.get(EXTRA_CALL_NUMBER));
+                // intent.putExtra(EXTRA_CALLER_NAME, connectionData.get(EXTRA_CALLER_NAME));
+                
+                Log.d("MangoVoice", "Starting intent");
+                // Launch activity
+                context.startActivity(intent);
+                Log.d("MangoVoice", "MainActivity launched for incoming call: " + connectionData.get(EXTRA_CALL_UUID));
+            } catch (Exception e) {
+                Log.e("MangoVoice", "Error launching MainActivity: " + e.getMessage());
+            }
         }
-        
     }
 
     @Override
