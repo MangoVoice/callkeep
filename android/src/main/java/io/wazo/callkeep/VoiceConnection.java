@@ -178,10 +178,10 @@ public class VoiceConnection extends Connection {
             intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
             
-            // Add call data to the intent
-            intent.putExtra(EXTRA_CALL_UUID, connectionData.get(EXTRA_CALL_UUID));
-            intent.putExtra(EXTRA_CALL_NUMBER, connectionData.get(EXTRA_CALL_NUMBER));
-            intent.putExtra(EXTRA_CALLER_NAME, connectionData.get(EXTRA_CALLER_NAME));
+            // // Add call data to the intent
+            // intent.putExtra(EXTRA_CALL_UUID, connectionData.get(EXTRA_CALL_UUID));
+            // intent.putExtra(EXTRA_CALL_NUMBER, connectionData.get(EXTRA_CALL_NUMBER));
+            // intent.putExtra(EXTRA_CALLER_NAME, connectionData.get(EXTRA_CALLER_NAME));
             
             // Launch activity
             context.startActivity(intent);
