@@ -167,11 +167,10 @@ public class VoiceConnection extends Connection {
     @Override
     public void onShowIncomingCallUi() {
         sendCallRequestToActivity(ACTION_INCOMING_CALL, connectionData);
-        // Launch MainActivity directly
-        Context context = getContext();
-        String packageName = context.getPackageName();
         
         try {
+            String packageName = context.getPackageName();
+            
             Intent intent = new Intent();
             intent.setClassName(packageName, packageName + ".MainActivity");
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
