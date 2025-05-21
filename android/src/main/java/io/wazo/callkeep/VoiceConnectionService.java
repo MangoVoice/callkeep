@@ -346,37 +346,37 @@ public class VoiceConnectionService extends ConnectionService {
     }
 
     private void startMainActivity(ConstraintsMap foregroundSettings) {
-        if (foregroundSettings == null) {
-            Log.w(TAG, "[VoiceConnectionService] foregroundSettings is null. Cannot start MainActivity.");
-            return;
-        }
+        // if (foregroundSettings == null) {
+        //     Log.w(TAG, "[VoiceConnectionService] foregroundSettings is null. Cannot start MainActivity.");
+        //     return;
+        // }
 
-        String packageName = foregroundSettings.getString("packageName");
-        if (packageName == null || packageName.isEmpty()) {
-            Log.w(TAG, "[VoiceConnectionService] 'packageName' not provided in foregroundSettings. Cannot start MainActivity.");
-            return;
-        }
+        // String packageName = foregroundSettings.getString("packageName");
+        // if (packageName == null || packageName.isEmpty()) {
+        //     Log.w(TAG, "[VoiceConnectionService] 'packageName' not provided in foregroundSettings. Cannot start MainActivity.");
+        //     return;
+        // }
 
-        try {
-            Intent intent = new Intent();
-            intent.setClassName(packageName, packageName + ".MainActivity");
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        // try {
+        //     Intent intent = new Intent();
+        //     intent.setClassName(packageName, packageName + ".MainActivity");
+        //     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-            boolean singleInstance = foregroundSettings.hasKey("singleInstance") ? foregroundSettings.getBoolean("singleInstance") : true; // Default to true
-            boolean noAnimation = foregroundSettings.hasKey("noAnimation") ? foregroundSettings.getBoolean("noAnimation") : true; // Default to true
+        //     boolean singleInstance = foregroundSettings.hasKey("singleInstance") ? foregroundSettings.getBoolean("singleInstance") : true; // Default to true
+        //     boolean noAnimation = foregroundSettings.hasKey("noAnimation") ? foregroundSettings.getBoolean("noAnimation") : true; // Default to true
 
-            if (singleInstance) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            }
-            if (noAnimation) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-            }
+        //     if (singleInstance) {
+        //         intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        //     }
+        //     if (noAnimation) {
+        //         intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+        //     }
 
-            this.getApplicationContext().startActivity(intent);
-            Log.d(TAG, "[VoiceConnectionService] MainActivity started with package: " + packageName);
-        } catch (Exception e) {
-            Log.e(TAG, "[VoiceConnectionService] Error starting MainActivity: " + e.getMessage());
-        }
+        //     this.getApplicationContext().startActivity(intent);
+        //     Log.d(TAG, "[VoiceConnectionService] MainActivity started with package: " + packageName);
+        // } catch (Exception e) {
+        //     Log.e(TAG, "[VoiceConnectionService] Error starting MainActivity: " + e.getMessage());
+        // }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
