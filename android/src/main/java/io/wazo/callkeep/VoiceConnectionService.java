@@ -71,9 +71,9 @@ import io.wazo.callkeep.utils.ConstraintsMap;
 
 // @see https://github.com/kbagchiGWC/voice-quickstart-android/blob/9a2aff7fbe0d0a5ae9457b48e9ad408740dfb968/exampleConnectionService/src/main/java/com/twilio/voice/examples/connectionservice/VoiceConnectionService.java
 public class VoiceConnectionService extends ConnectionService {
-    private static Boolean isAvailable;
-    private static Boolean isInitialized;
-    private static Boolean isReachable;
+    private static Boolean isAvailable = false;
+    private static Boolean isInitialized = false;
+    private static Boolean isReachable = false;
     private static PhoneAccountHandle phoneAccountHandle = null;
     private static final String TAG = "RNCK:VoiceConnectionService";
     private static final Map<String, VoiceConnection> currentConnections = new HashMap<>();
@@ -114,9 +114,6 @@ public class VoiceConnectionService extends ConnectionService {
     public VoiceConnectionService() {
         super();
         Log.e(TAG, "Constructor");
-        isReachable = false;
-        isInitialized = false;
-        isAvailable = false;
         currentConnectionService = this;
     }
 
@@ -273,15 +270,22 @@ public class VoiceConnectionService extends ConnectionService {
 
     private boolean wakeAndCheckAvailability(Bundle callExtras, Boolean forceWakeUp) {
         boolean isRunning = VoiceConnectionService.isRunning(this.getApplicationContext());
+        Log.d(TAG, "wakeAndCheckAvailability: isRunning=" + isRunning + ", forceWakeUp=" + forceWakeUp);
+        
         // Wakeup application if needed
         if (!isRunning || forceWakeUp) {
             Log.d(TAG, "makeOngoingCall: Waking up application");
             this.wakeUpApplication(callExtras);
         }
-        if (this.canMakeOutgoingCall() && isReachable) {
+        
+        boolean canMakeCall = this.canMakeOutgoingCall();
+        Log.d(TAG, "wakeAndCheckAvailability: canMakeOutgoingCall=" + canMakeCall + ", isReachable=" + isReachable + ", isAvailable=" + isAvailable + ", isInitialized=" + isInitialized);
+        
+        if (canMakeCall && isReachable) {
+            Log.d(TAG, "wakeAndCheckAvailability: returning TRUE");
             return true;
         }
-        Log.d(TAG, "makeOngoingCall: not available");
+        Log.d(TAG, "wakeAndCheckAvailability: returning FALSE - makeOngoingCall: not available");
         return false;
     }
 
@@ -506,13 +510,18 @@ public class VoiceConnectionService extends ConnectionService {
      */
     public static boolean isRunning(Context context) {
         ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        List<RunningTaskInfo> tasks = activityManager.getRunningTasks(Integer.MAX_VALUE);
-
-        for (RunningTaskInfo task : tasks) {
-            if (context.getPackageName().equalsIgnoreCase(task.baseActivity.getPackageName()))
-                return true;
+        List<ActivityManager.RunningAppProcessInfo> runningProcesses = activityManager.getRunningAppProcesses(); // Still works
+        
+        String packageName = context.getPackageName();
+        if (runningProcesses != null) {
+            for (ActivityManager.RunningAppProcessInfo processInfo : runningProcesses) {
+                if (processInfo.processName.equals(packageName)) {
+                    Log.d(TAG, "isRunning: " + packageName + " is running");
+                    return true;
+                }
+            }
         }
-
+        Log.d(TAG, "isRunning: " + packageName + " is not running");
         return false;
     }
 }
