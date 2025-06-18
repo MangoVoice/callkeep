@@ -28,6 +28,7 @@ import static io.wazo.callkeep.CallKeepConstants.EXTRA_CALL_NUMBER;
 import static io.wazo.callkeep.CallKeepConstants.EXTRA_CALL_UUID;
 import static io.wazo.callkeep.CallKeepConstants.FOREGROUND_SERVICE_TYPE_MICROPHONE;
 import static io.wazo.callkeep.CallKeepConstants.HOLD_SUPPORT_DATA_KEY;
+import static io.wazo.callkeep.CallKeepConstants.EXTRA_DISABLE_ADD_CALL;
 
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningTaskInfo;
@@ -255,11 +256,7 @@ public class VoiceConnectionService extends ConnectionService {
         Log.d(TAG, "[VoiceConnectionService] makeOutgoingCall, uuid:" + uuid + ", number: " + number + ", displayName:" + displayName);
 
         // Wakeup application if needed
-        if (!isForeground || forceWakeUp) {
-            Log.d(TAG, "[VoiceConnectionService] onCreateOutgoingConnection: Waking up application");
-            this.wakeUpApplication(uuid, number, displayName);
-        } else if (!this.canMakeOutgoingCall() && isReachable) {
-            Log.d(TAG, "[VoiceConnectionService] onCreateOutgoingConnection: not available");
+        if (!wakeAndCheckAvailability(request.getExtras(), false)) {
             return Connection.createFailedConnection(new DisconnectCause(DisconnectCause.LOCAL));
         }
 
@@ -291,7 +288,7 @@ public class VoiceConnectionService extends ConnectionService {
 
         HashMap<String, String> extrasMap = this.bundleToMap(extras);
 
-        sendCallRequestToActivity(ACTION_ONGOING_CALL, extrasMap, true);
+        sendCallRequestToActivity(ACTION_ONGOING_CALL, extrasMap);
 
         Log.d(TAG, "[VoiceConnectionService] onCreateOutgoingConnection: done");
 
@@ -439,7 +436,7 @@ public class VoiceConnectionService extends ConnectionService {
         if (request.getAddress() == null) {
             return null;
         }
-        HashMap<String, String> extrasMap = this.bundleToMap(extras);
+        HashMap<String, Object> extrasMap = this.bundleToMap(extras);
 
         String callerNumber = request.getAddress().toString();
         Log.d(TAG, "[VoiceConnectionService] createConnection, callerNumber:" + callerNumber);

@@ -25,6 +25,7 @@ public class CallKeepConstants {
     public static final String EXTRA_CALL_DATA = "EXTRA_CALL_EXTRAS";
     public static final String EXTRA_CALLER_NAME = "EXTRA_CALLER_NAME";
     public static final String EXTRA_CALL_ATTRIB = "EXTRA_CALL_ATTRIB";
+    public static final String EXTRA_DISABLE_ADD_CALL = "EXTRA_DISABLE_ADD_CALL";
 
 
     public static final String HOLD_SUPPORT_DATA_KEY = "io.wazo.callkeep.HoldSupported";
