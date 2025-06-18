@@ -233,20 +233,15 @@ public class VoiceConnectionService extends ConnectionService {
     }
 
     private Connection makeOutgoingCall(ConnectionRequest request) {
-        fixMissingNumber(request.getAddress(), request.getExtras());
-        fixMissingCallId(request.getExtras());
-        if (!wakeAndCheckAvailability(request.getExtras(), false)) {
-            return Connection.createFailedConnection(new DisconnectCause(DisconnectCause.LOCAL));
-        } else {
-            VoiceConnection connection = makeOngoingCall(request, request.getExtras());
-            connection.setDialing();
-            connection.initCall();
-            return connection;
-        }
-    }
-
-    private Connection makeOutgoingCall(ConnectionRequest request, String uuid, Boolean forceWakeUp) {
         Bundle extras = request.getExtras();
+
+        String uuid = extras.getString(EXTRA_CALL_UUID);
+        
+        if(uuid == null || uuid.isEmpty()){
+            // Having a uuid is required for the connection to be created
+            uuid = UUID.randomUUID().toString();
+        }
+
         Connection outgoingCallConnection = null;
         String number = request.getAddress().getSchemeSpecificPart();
         String extrasNumber = extras.getString(EXTRA_CALL_NUMBER);
@@ -286,7 +281,7 @@ public class VoiceConnectionService extends ConnectionService {
             outgoingCallConnection.setInitialized();
         }
 
-        HashMap<String, String> extrasMap = this.bundleToMap(extras);
+        HashMap<String, Object> extrasMap = this.bundleToMap(extras);
 
         sendCallRequestToActivity(ACTION_ONGOING_CALL, extrasMap);
 
