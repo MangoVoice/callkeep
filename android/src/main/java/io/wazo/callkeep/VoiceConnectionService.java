@@ -393,7 +393,7 @@ public class VoiceConnectionService extends ConnectionService {
         connection.setInitializing();
         connection.setExtras(extras);
 
-        int capabilities = connection.getConnectionCapabilities() | Connection.CAPABILITY_MUTE | Connection.CAPABILITY_HOLD | Connection.CAPABILITY_SUPPORT_HOLD | Connection.CAPABILITY_SWAP;
+        int capabilities = connection.getConnectionCapabilities() | Connection.CAPABILITY_MUTE | Connection.CAPABILITY_HOLD | Connection.CAPABILITY_SUPPORT_HOLD;
 
         connection.setConnectionCapabilities(capabilities);
 
