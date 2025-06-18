@@ -678,7 +678,7 @@ public class CallKeepModule {
         if (isSelfManaged(options)) {
             capabilities |= PhoneAccount.CAPABILITY_SELF_MANAGED;
         } else {
-            capabilities |= PhoneAccount.CAPABILITY_CALL_PROVIDER;
+            capabilities |= PhoneAccount.CAPABILITY_CALL_PROVIDER | PhoneAccount.CAPABILITY_CONNECTION_MANAGER;
         }
 
         builder.setCapabilities(capabilities);

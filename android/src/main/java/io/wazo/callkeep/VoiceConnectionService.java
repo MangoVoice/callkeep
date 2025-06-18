@@ -393,18 +393,8 @@ public class VoiceConnectionService extends ConnectionService {
         connection.setInitializing();
         connection.setExtras(extras);
 
-        int capabilities = connection.getConnectionCapabilities() | Connection.CAPABILITY_MUTE;
-        ConstraintsMap settings = getSettings(getApplicationContext());
-        if (settings != null) {
-            if (!settings.isNull("supportsHolding") && settings.getBoolean("supportsHolding")) {
-                capabilities |= Connection.CAPABILITY_SUPPORT_HOLD;
-            }
-        } else {
-            ConstraintsMap metDataSettings = getMetadataSettings();
-            if (Boolean.TRUE.equals(metDataSettings.getBoolean(HOLD_SUPPORT_DATA_KEY))) {
-                capabilities |= Connection.CAPABILITY_SUPPORT_HOLD;
-            }
-        }
+        int capabilities = connection.getConnectionCapabilities() | Connection.CAPABILITY_MUTE | Connection.CAPABILITY_HOLD | Connection.CAPABILITY_SUPPORT_HOLD | Connection.CAPABILITY_SWAP;
+
         connection.setConnectionCapabilities(capabilities);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
