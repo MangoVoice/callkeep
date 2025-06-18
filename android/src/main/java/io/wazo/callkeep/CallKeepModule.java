@@ -673,6 +673,7 @@ public class CallKeepModule {
         ensureTelecomManagerInitialize(appContext);
         String appName = getApplicationName(appContext);
         PhoneAccount.Builder builder = new PhoneAccount.Builder(accountHandle, appName);
+        builder.setShortDescription(appName);
         int capabilities = 0;
         if (isSelfManaged(options)) {
             capabilities |= PhoneAccount.CAPABILITY_SELF_MANAGED;
