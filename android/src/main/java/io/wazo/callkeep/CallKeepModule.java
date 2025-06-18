@@ -625,7 +625,7 @@ public class CallKeepModule {
             return;
         }
 
-        if (Build.MANUFACTURER.equalsIgnoreCase("Samsung")) {
+        if (Build.MANUFACTURER.equalsIgnoreCase("Samsung") || Build.MANUFACTURER.equalsIgnoreCase("OnePlus")) {
             Intent intent = new Intent();
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
             intent.setComponent(new ComponentName("com.android.server.telecom",

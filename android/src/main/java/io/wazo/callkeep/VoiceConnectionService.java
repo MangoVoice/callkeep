@@ -71,6 +71,7 @@ import io.wazo.callkeep.utils.ConstraintsMap;
 
 // @see https://github.com/kbagchiGWC/voice-quickstart-android/blob/9a2aff7fbe0d0a5ae9457b48e9ad408740dfb968/exampleConnectionService/src/main/java/com/twilio/voice/examples/connectionservice/VoiceConnectionService.java
 public class VoiceConnectionService extends ConnectionService {
+    private static Boolean canMakeMultipleCalls = false;
     private static Boolean isAvailable = false;
     private static Boolean isInitialized = false;
     private static Boolean isReachable = false;
@@ -121,6 +122,11 @@ public class VoiceConnectionService extends ConnectionService {
     public void onCreate() {
         super.onCreate();
         checkReachability();
+    }
+
+    public static void setCanMakeMultipleCalls(Boolean value) {
+        Log.d(TAG, "[VoiceConnectionService] setCanMakeMultipleCalls: " + (value ? "true" : "false"));
+        VoiceConnectionService.canMakeMultipleCalls = value;
     }
 
     public static void setPhoneAccountHandle(PhoneAccountHandle phoneAccountHandle) {
@@ -238,19 +244,58 @@ public class VoiceConnectionService extends ConnectionService {
         }
     }
 
-    private VoiceConnection makeOngoingCall(ConnectionRequest request, Bundle extras) {
-        String extrasUuid = extras.getString(EXTRA_CALL_UUID);
+    private Connection makeOutgoingCall(ConnectionRequest request, String uuid, Boolean forceWakeUp) {
+        Bundle extras = request.getExtras();
+        Connection outgoingCallConnection = null;
+        String number = request.getAddress().getSchemeSpecificPart();
         String extrasNumber = extras.getString(EXTRA_CALL_NUMBER);
         String displayName = extras.getString(EXTRA_CALLER_NAME);
-        Log.d(TAG, "makeOngoingCall: " + extrasUuid + ", number: " + extrasNumber + ", displayName:" + displayName);
+        Boolean isForeground = VoiceConnectionService.isRunning(this.getApplicationContext());
+
+        Log.d(TAG, "[VoiceConnectionService] makeOutgoingCall, uuid:" + uuid + ", number: " + number + ", displayName:" + displayName);
+
+        // Wakeup application if needed
+        if (!isForeground || forceWakeUp) {
+            Log.d(TAG, "[VoiceConnectionService] onCreateOutgoingConnection: Waking up application");
+            this.wakeUpApplication(uuid, number, displayName);
+        } else if (!this.canMakeOutgoingCall() && isReachable) {
+            Log.d(TAG, "[VoiceConnectionService] onCreateOutgoingConnection: not available");
+            return Connection.createFailedConnection(new DisconnectCause(DisconnectCause.LOCAL));
+        }
+
         // TODO: Hold all other calls
-        HashMap<String, Object> connectionData = this.bundleToMap(extras);
-        VoiceConnection connection = new VoiceConnection(this, connectionData);
-        initConnection(extrasUuid, connection, extras, request.getAccountHandle());
+        if (extrasNumber == null || !extrasNumber.equals(number)) {
+            extras.putString(EXTRA_CALL_UUID, uuid);
+            extras.putString(EXTRA_CALLER_NAME, displayName);
+            extras.putString(EXTRA_CALL_NUMBER, number);
+        }
+
+        if (!canMakeMultipleCalls) {
+            Log.d(TAG, "[VoiceConnectionService] onCreateOutgoingConnection: disabling multi calls");
+            extras.putBoolean(EXTRA_DISABLE_ADD_CALL, true);
+        }
+
+        outgoingCallConnection = createConnection(request);
+        outgoingCallConnection.setDialing();
+        outgoingCallConnection.setAudioModeIsVoip(true);
+        outgoingCallConnection.setCallerDisplayName(displayName, TelecomManager.PRESENTATION_ALLOWED);
+
         startForegroundService();
-        sendCallRequestToActivity(ACTION_ONGOING_CALL, connectionData);
-        Log.d(TAG, "makeOngoingCall: calling");
-        return connection;
+
+        // ‍️Weirdly on some Samsung phones (A50, S9...) using `setInitialized` will not display the native UI ...
+        // when making a call from the native Phone application. The call will still be displayed correctly without it.
+        if (!Build.MANUFACTURER.equalsIgnoreCase("Samsung")) {
+            Log.d(TAG, "[VoiceConnectionService] onCreateOutgoingConnection: initializing connection on non-Samsung device");
+            outgoingCallConnection.setInitialized();
+        }
+
+        HashMap<String, String> extrasMap = this.bundleToMap(extras);
+
+        sendCallRequestToActivity(ACTION_ONGOING_CALL, extrasMap, true);
+
+        Log.d(TAG, "[VoiceConnectionService] onCreateOutgoingConnection: done");
+
+        return outgoingCallConnection;
     }
 
     private void fixMissingNumber(Uri address, Bundle callExtras) {
@@ -389,49 +434,51 @@ public class VoiceConnectionService extends ConnectionService {
         return isAvailable;
     }
 
-    private void initConnection(String uuid, VoiceConnection connection, Bundle extras, PhoneAccountHandle accountHandle) {
-        connection.setInitializing();
-        connection.setExtras(extras);
-
-        int capabilities = connection.getConnectionCapabilities() | Connection.CAPABILITY_MUTE;
-        ConstraintsMap settings = getSettings(getApplicationContext());
-        if (settings != null) {
-            if (!settings.isNull("supportsHolding") && settings.getBoolean("supportsHolding")) {
-                capabilities |= Connection.CAPABILITY_SUPPORT_HOLD;
-            }
-        } else {
-            ConstraintsMap metDataSettings = getMetadataSettings();
-            if (Boolean.TRUE.equals(metDataSettings.getBoolean(HOLD_SUPPORT_DATA_KEY))) {
-                capabilities |= Connection.CAPABILITY_SUPPORT_HOLD;
-            }
+    private Connection createConnection(ConnectionRequest request) {
+        Bundle extras = request.getExtras();
+        if (request.getAddress() == null) {
+            return null;
         }
-        connection.setConnectionCapabilities(capabilities);
+        HashMap<String, String> extrasMap = this.bundleToMap(extras);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        String callerNumber = request.getAddress().toString();
+        Log.d(TAG, "[VoiceConnectionService] createConnection, callerNumber:" + callerNumber);
+
+        extrasMap.put(EXTRA_CALL_NUMBER, callerNumber);
+
+        VoiceConnection connection = new VoiceConnection(this, extrasMap);
+        connection.setConnectionCapabilities(Connection.CAPABILITY_MUTE | Connection.CAPABILITY_SUPPORT_HOLD);
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Context context = getApplicationContext();
-            TelecomManager telecomManager = (TelecomManager) context.getSystemService(Context.TELECOM_SERVICE);
-            PhoneAccount phoneAccount = telecomManager.getPhoneAccount(accountHandle);
+            TelecomManager telecomManager = (TelecomManager) context.getSystemService(context.TELECOM_SERVICE);
+            PhoneAccount phoneAccount = telecomManager.getPhoneAccount(request.getAccountHandle());
 
             //If the phone account is self managed, then this connection must also be self managed.
-            if ((phoneAccount.getCapabilities() & PhoneAccount.CAPABILITY_SELF_MANAGED) == PhoneAccount.CAPABILITY_SELF_MANAGED) {
+            if((phoneAccount.getCapabilities() & PhoneAccount.CAPABILITY_SELF_MANAGED) == PhoneAccount.CAPABILITY_SELF_MANAGED) {
                 Log.d(TAG, "[VoiceConnectionService] PhoneAccount is SELF_MANAGED, so connection will be too");
                 connection.setConnectionProperties(Connection.PROPERTY_SELF_MANAGED);
-            } else {
+            }
+            else {
                 Log.d(TAG, "[VoiceConnectionService] PhoneAccount is not SELF_MANAGED, so connection won't be either");
             }
         }
 
+        connection.setInitializing();
+        connection.setExtras(extras);
+        currentConnections.put(extras.getString(EXTRA_CALL_UUID), connection);
+
         // Get other connections for conferencing
-        List<Connection> conferenceConnections = new ArrayList<>(currentConnections.values());
+        Map<String, VoiceConnection> otherConnections = new HashMap<>();
+        for (Map.Entry<String, VoiceConnection> entry : currentConnections.entrySet()) {
+            if(!(extras.getString(EXTRA_CALL_UUID).equals(entry.getKey()))) {
+                otherConnections.put(entry.getKey(), entry.getValue());
+            }
+        }
+        List<Connection> conferenceConnections = new ArrayList<Connection>(otherConnections.values());
         connection.setConferenceableConnections(conferenceConnections);
 
-        currentConnections.put(uuid, connection);
-
-        // ‍️Weirdly on some Samsung phones (A50, S9...) using `setInitialized` will not display the native UI ...
-        // when making a call from the native Phone application. The call will still be displayed correctly without it.
-        if (!Build.MANUFACTURER.equalsIgnoreCase("Samsung")) {
-            connection.setInitialized();
-        }
+        return connection;
     }
 
     @Override
