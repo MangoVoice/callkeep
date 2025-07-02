@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 /// Main configuration options for CallKeep
 class CallKeepOptions {
   /// Constructor for CallKeep options
