@@ -146,11 +146,24 @@ public class VoiceConnectionService extends ConnectionService {
         Log.d(TAG, "deinitConnection:" + connectionId);
         VoiceConnectionService.hasOutgoingCall = false;
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            currentConnectionService.stopForegroundService();
+        synchronized (currentConnections) {
+            currentConnections.remove(connectionId);
+            int remainingConnections = currentConnections.size();
+            
+            Log.d(TAG, "After removing " + connectionId + ", remaining connections: " + remainingConnections);
+            
+            // Only stop foreground service if no more connections remain
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && remainingConnections == 0) {
+                Log.d(TAG, "No more connections, stopping foreground service");
+                if (currentConnectionService != null) {
+                    currentConnectionService.stopForegroundService();
+                } else {
+                    Log.w(TAG, "Cannot stop foreground service - currentConnectionService is null");
+                }
+            } else {
+                Log.d(TAG, "Still have " + remainingConnections + " connections, keeping foreground service");
+            }
         }
-
-        currentConnections.remove(connectionId);
     }
 
     public static void shutdownService(Context context) {
@@ -413,11 +426,14 @@ public class VoiceConnectionService extends ConnectionService {
             }
         }
 
-        // Get other connections for conferencing
-        List<Connection> conferenceConnections = new ArrayList<>(currentConnections.values());
-        connection.setConferenceableConnections(conferenceConnections);
+        // Synchronize connection map access to prevent race conditions
+        synchronized (currentConnections) {
+            List<Connection> conferenceConnections = new ArrayList<>(currentConnections.values());
+            connection.setConferenceableConnections(conferenceConnections);
 
-        currentConnections.put(uuid, connection);
+            currentConnections.put(uuid, connection);
+            Log.d(TAG, "Added connection " + uuid + ", total connections: " + currentConnections.size());
+        }
 
         // ‍️Weirdly on some Samsung phones (A50, S9...) using `setInitialized` will not display the native UI ...
         // when making a call from the native Phone application. The call will still be displayed correctly without it.
