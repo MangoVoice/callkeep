@@ -56,7 +56,7 @@ public class VoiceConnection extends Connection {
     private static final String TAG = "RNCK:VoiceConnection";
     private final HashMap<String, Object> connectionData;
     private final Context context;
-    private boolean isClosed = false;
+    private boolean isClosedConnection = false;
 
     VoiceConnection(@NonNull Context context, @NonNull HashMap<String, Object> connectionData) {
         super();
@@ -116,7 +116,7 @@ public class VoiceConnection extends Connection {
 
     @Override
     public void onCallAudioStateChanged(CallAudioState state) {
-        if (isClosed) {
+        if (isClosedConnection) {
             Log.d(TAG, "Ignoring audio state change on closed connection");
             return;
         }
@@ -144,7 +144,7 @@ public class VoiceConnection extends Connection {
 
     @Override
     public void onAnswer() {
-        if (isClosed) {
+        if (isClosedConnection) {
             Log.d(TAG, "Ignoring onAnswer on closed connection");
             return;
         }
@@ -155,7 +155,7 @@ public class VoiceConnection extends Connection {
 
     @Override
     public void onAnswer(int videoState) {
-        if (isClosed) {
+        if (isClosedConnection) {
             Log.d(TAG, "Ignoring onAnswer videoState on closed connection");
             return;
         }
@@ -185,7 +185,7 @@ public class VoiceConnection extends Connection {
 
     @Override
     public void onPlayDtmfTone(char dtmf) {
-        if (isClosed) {
+        if (isClosedConnection) {
             Log.d(TAG, "Ignoring onPlayDtmfTone on closed connection");
             return;
         }
@@ -243,7 +243,7 @@ public class VoiceConnection extends Connection {
 
     @Override
     public void onHold() {
-        if (isClosed) {
+        if (isClosedConnection) {
             Log.d(TAG, "Ignoring onHold on closed connection");
             return;
         }
@@ -254,7 +254,7 @@ public class VoiceConnection extends Connection {
 
     @Override
     public void onUnhold() {
-        if (isClosed) {
+        if (isClosedConnection) {
             Log.d(TAG, "Ignoring onUnhold on closed connection");
             return;
         }
@@ -288,7 +288,7 @@ public class VoiceConnection extends Connection {
     }
 
     private void close(int causeCode) {
-        isClosed = true;
+        isClosedConnection = true;
         setDisconnected(new DisconnectCause(causeCode));
         VoiceConnectionService.deinitConnection((String) connectionData.get(EXTRA_CALL_UUID));
         
