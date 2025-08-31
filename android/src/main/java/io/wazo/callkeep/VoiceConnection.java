@@ -282,8 +282,13 @@ public class VoiceConnection extends Connection {
     }
 
     private void setHoldableIfSupported() {
-        if ((getConnectionCapabilities() & CAPABILITY_SUPPORT_HOLD) == CAPABILITY_SUPPORT_HOLD) {
-            setConnectionCapabilities(getConnectionCapabilities() | CAPABILITY_HOLD);
+        try {
+            // Force enable hold capabilities for all devices
+            int currentCapabilities = getConnectionCapabilities();
+            setConnectionCapabilities(currentCapabilities | CAPABILITY_HOLD | CAPABILITY_SUPPORT_HOLD);
+        } catch (Exception e) {
+            // Log error but don't crash
+            Log.w(TAG, "Failed to set hold capabilities", e);
         }
     }
 

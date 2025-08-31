@@ -440,6 +440,9 @@ public class VoiceConnectionService extends ConnectionService {
         if (!Build.MANUFACTURER.equalsIgnoreCase("Samsung")) {
             connection.setInitialized();
         }
+        
+        // Ensure hold capabilities are always available after initialization
+        connection.setConnectionCapabilities(connection.getConnectionCapabilities() | Connection.CAPABILITY_HOLD | Connection.CAPABILITY_SUPPORT_HOLD);
     }
 
     @Override
@@ -451,6 +454,10 @@ public class VoiceConnectionService extends ConnectionService {
         VoiceConference voiceConference = new VoiceConference(phoneAccountHandle);
         voiceConference.addConnection(voiceConnection1);
         voiceConference.addConnection(voiceConnection2);
+
+        // Ensure both connections have hold capabilities
+        connection1.setConnectionCapabilities(connection1.getConnectionCapabilities() | Connection.CAPABILITY_HOLD | Connection.CAPABILITY_SUPPORT_HOLD);
+        connection2.setConnectionCapabilities(connection2.getConnectionCapabilities() | Connection.CAPABILITY_HOLD | Connection.CAPABILITY_SUPPORT_HOLD);
 
         connection1.onUnhold();
         connection2.onUnhold();
