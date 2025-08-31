@@ -36,6 +36,7 @@ import static io.wazo.callkeep.CallKeepConstants.EXTRA_CALL_UUID;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.telecom.CallAudioState;
@@ -62,6 +63,11 @@ public class VoiceConnection extends Connection {
         super();
         this.connectionData = connectionData;
         this.context = context;
+        
+        
+        // Set hold capabilities immediately
+        setHoldCapabilities();
+        
         updateDisplay();
     }
 
@@ -121,6 +127,13 @@ public class VoiceConnection extends Connection {
             return;
         }
         super.onCallAudioStateChanged(state);
+        
+        int capabilities = getConnectionCapabilities();
+        if ((capabilities & CAPABILITY_HOLD) == 0) {
+            Log.d(TAG, "Hold capability missing during audio change, restoring...");
+            setHoldCapabilities();
+        }
+        
         if (state != null) {
             if (!Objects.equals(connectionData.get("isMuted"), state.isMuted())) {
                 connectionData.put("isMuted", state.isMuted());
@@ -132,6 +145,36 @@ public class VoiceConnection extends Connection {
                 data.put("audioRoute", state.getRoute());
                 data.put("audioRouteName", CallAudioState.audioRouteToString(state.getRoute()));
                 sendCallRequestToActivity(ACTION_AUDIO_CALL, data);
+            }
+        }
+    }
+    
+    /**
+     * Single method to set hold capabilities - replaces all redundant methods
+     */
+    private void setHoldCapabilities() {
+        try {
+            int capabilities = CAPABILITY_MUTE | CAPABILITY_HOLD | CAPABILITY_SUPPORT_HOLD;
+            setConnectionCapabilities(capabilities);
+            
+            // Verify capabilities were set
+            int actual = getConnectionCapabilities();
+            Log.d(TAG, "Hold capabilities set: " + actual + " (HOLD: " + ((actual & CAPABILITY_HOLD) != 0) + ")");
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to set hold capabilities", e);
+        }
+    }
+    
+    @Override
+    public void onStateChanged(int state) {
+        super.onStateChanged(state);
+        
+        Log.d(TAG, "Connection state changed to: " + state);
+        if (state == STATE_ACTIVE || state == STATE_DIALING) {
+            int capabilities = getConnectionCapabilities();
+            if ((capabilities & CAPABILITY_HOLD) == 0) {
+                Log.d(TAG, "Setting capabilities for state: " + state);
+                setHoldCapabilities();
             }
         }
     }
@@ -150,6 +193,10 @@ public class VoiceConnection extends Connection {
         }
         super.onAnswer();
         Log.d(TAG, "onAnswer called");
+        
+        // Set hold capabilities when call is answered
+        setHoldCapabilities();
+        
         Log.d(TAG, "onAnswer ignored");
     }
 
@@ -161,6 +208,10 @@ public class VoiceConnection extends Connection {
         }
         super.onAnswer(videoState);
         Log.d(TAG, "onAnswer videoState called: " + videoState);
+        
+        // Set hold capabilities when call is answered (including multi-call scenarios)
+        setHoldCapabilities();
+        
         onAnswered();
         Log.d(TAG, "onAnswer videoState executed");
     }
@@ -172,7 +223,7 @@ public class VoiceConnection extends Connection {
     }
 
     public void initCall() {
-        setHoldableIfSupported();
+        setHoldCapabilities();
         setAudioModeIsVoip(true);
         sendCallRequestToActivity(ACTION_AUDIO_SESSION, connectionData);
     }
@@ -277,19 +328,9 @@ public class VoiceConnection extends Connection {
     }
 
     public void setCurrent() {
-        setHoldableIfSupported();
+        setHoldCapabilities();
         setActive();
-    }
-
-    private void setHoldableIfSupported() {
-        try {
-            // Force enable hold capabilities for all devices
-            int currentCapabilities = getConnectionCapabilities();
-            setConnectionCapabilities(currentCapabilities | CAPABILITY_HOLD | CAPABILITY_SUPPORT_HOLD);
-        } catch (Exception e) {
-            // Log error but don't crash
-            Log.w(TAG, "Failed to set hold capabilities", e);
-        }
+        Log.d(TAG, "setCurrent complete - State: " + getState());
     }
 
     private void close(int causeCode) {
