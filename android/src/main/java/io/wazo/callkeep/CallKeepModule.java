@@ -681,6 +681,12 @@ public class CallKeepModule {
             capabilities |= PhoneAccount.CAPABILITY_CALL_PROVIDER | PhoneAccount.CAPABILITY_CONNECTION_MANAGER;
         }
 
+        // Add hold support to PhoneAccount - this tells Android the account supports hold
+        List<String> supportedUriSchemes = new ArrayList<>();
+        supportedUriSchemes.add(PhoneAccount.SCHEME_SIP);
+        supportedUriSchemes.add(PhoneAccount.SCHEME_TEL);
+        builder.setSupportedUriSchemes(supportedUriSchemes);
+        
         builder.setCapabilities(capabilities);
 
         if (!options.isNull("imageName")) {

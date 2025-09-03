@@ -435,11 +435,16 @@ public class VoiceConnectionService extends ConnectionService {
             Log.d(TAG, "Added connection " + uuid + ", total connections: " + currentConnections.size());
         }
 
-        // ‍️Weirdly on some Samsung phones (A50, S9...) using `setInitialized` will not display the native UI ...
-        // when making a call from the native Phone application. The call will still be displayed correctly without it.
-        if (!Build.MANUFACTURER.equalsIgnoreCase("Samsung")) {
-            connection.setInitialized();
+        // Force initialize connection for all devices including Samsung
+        // This is required for hold capabilities to work properly
+        connection.setInitialized();
+        
+        if (Build.MANUFACTURER.equalsIgnoreCase("Samsung")) {
+            connection.setConnectionCapabilities(Connection.CAPABILITY_MUTE | Connection.CAPABILITY_HOLD | Connection.CAPABILITY_SUPPORT_HOLD);
         }
+        
+        // Ensure hold capabilities are always available after initialization
+        connection.setConnectionCapabilities(connection.getConnectionCapabilities() | Connection.CAPABILITY_HOLD | Connection.CAPABILITY_SUPPORT_HOLD);
     }
 
     @Override
@@ -451,6 +456,10 @@ public class VoiceConnectionService extends ConnectionService {
         VoiceConference voiceConference = new VoiceConference(phoneAccountHandle);
         voiceConference.addConnection(voiceConnection1);
         voiceConference.addConnection(voiceConnection2);
+
+        // Ensure both connections have hold capabilities
+        connection1.setConnectionCapabilities(connection1.getConnectionCapabilities() | Connection.CAPABILITY_HOLD | Connection.CAPABILITY_SUPPORT_HOLD);
+        connection2.setConnectionCapabilities(connection2.getConnectionCapabilities() | Connection.CAPABILITY_HOLD | Connection.CAPABILITY_SUPPORT_HOLD);
 
         connection1.onUnhold();
         connection2.onUnhold();
